@@ -1,6 +1,6 @@
 # How to Get Certified
 
-The Flight Training Scheduler project serves as the certification test for Akka developers. This certification process evaluates your ability to implement a real-world application using Akka SDK components.
+The Flight Training Scheduler project serves as the certification test for Akka developers. This certification process evaluates your ability to implement a real-world application using Akka SDK components given a set of requirements, scaffolding, and some starter classes.
 
 ## Getting Started
 
@@ -8,7 +8,7 @@ The Flight Training Scheduler project serves as the certification test for Akka 
 
 * Java 21, Eclipse Adoptium recommend
 * Apache Maven version 3.9 or later
-* curl command-line tool
+* `curl` command-line tool
 
 Clone this template repository, which contains:
 
@@ -21,13 +21,9 @@ Clone this template repository, which contains:
 
 Your task is to implement the following Akka SDK components:
 
-* Reservation [endpoint](https://doc.akka.io/java/http-endpoints.html)
-* TimeSlot [entity](https://doc.akka.io/java/event-sourced-entities.html)
-* Reservation [entity](https://doc.akka.io/java/event-sourced-entities.html)
-* Booking [workflow](https://doc.akka.io/java/workflows.html)
-* TimeSlot [view](https://doc.akka.io/java/views.html)
-* Reservation to time slot [consumer](https://doc.akka.io/java/consuming-producing.html)
-* Time slot to reservation [consumer](https://doc.akka.io/java/consuming-producing.html)
+* Flights [endpoint](https://doc.akka.io/java/http-endpoints.html)
+* BookingSlot [entity](https://doc.akka.io/java/event-sourced-entities.html)
+* Timeslot [view](https://doc.akka.io/java/views.html)
 
 ### Implementation Guidelines
 
@@ -58,240 +54,31 @@ The certification team will review your implementation for:
 
 ## Flight Training Scheduler App Design
 
-The Flight Training Scheduler manages flight training sessions by coordinating the availability and commitment of three participants: students, instructors, and aircraft. All interactions with the system occur through an HTTP endpoint:
+Flight schools provide training to students looking to become pilots. While some of that training is in a classroom, most training takes place in a real plane. Scheduling this training can be a complex process and so your assignment is to create the backend for a flight training scheduler.
 
-<table>
-<tr>
-<th>Type</th>
-<th>Relative URL</th>
-<th>Parameters</th>
-</tr>
-<tr>
-<td>POST</td>
-<td>/flight/booking<br/><br/><code>curl -X POST \
-'http://localhost:9000/flight/booking' \
--H 'Content-Type: application/json' \
--d '{
-      "reservationId": "ABC123",
-      "studentId": "student-123",
-      "reservationTime": "2024-03-20T14:00:00Z"
-      }'
-</code></td>
-<td><code>
-String reservationId
-String studentId
-Instant reservationTime
-</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>akka.Done</code>
-</td>
-</tr>
-<tr>
-<td>POST</td>
-<td>/flight/reservation<br/><br/><code>curl -X POST \
-'http://localhost:9000/flight/reservation' \
--H 'Content-Type: application/json' \
--d '{
-      "reservationId": "ABC123",
-      "studentId": "student-123",
-      "studentTimeSlotId": "slot-s-123",
-      "instructorId": "instructor-456",
-      "instructorTimeSlotId": "slot-i-456",
-      "aircraftId": "aircraft-789",
-      "aircraftTimeSlotId": "slot-a-789",
-      "reservationTime": "2024-03-20T14:00:00Z"
-    }'</code></td>
-<td><code>
-String reservationId
-String studentId
-String studentTimeSlotId
-String instructorId
-String instructorTimeSlotId
-String aircraftId
-String aircraftTimeSlotId
-Instant reservationTime
-</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>akka.Done</code>
-</td>
-</tr>
-<tr>
-<td>PUT</td>
-<td>/flight/reservation-cancel<br/><br/><code>curl -X PUT \
-'http://localhost:9000/flight/reservation-cancel' \
--H 'Content-Type: application/json' \
--d '{
-      "reservationId": "ABC123"
-    }'</code></td>
-<td><code>
-String reservationId</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>akka.Done</code>
-</td>
-</tr>
-<tr>
-<td>GET</td>
-<td>/flight/reservation<br/><br/><code>curl -X GET \
-'http://localhost:8080/flight/reservation/res-123'</code></td>
-<td><code>
-String reservationId</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>Reservation.State</code>
-</td>
-</tr>
-<tr>
-<td>POST</td>
-<td>/flight/make-time-slot-available<br/><br/><code>curl -X POST \
-'http://localhost:8080/flight/make-time-slot-available' \
--H 'Content-Type: application/json' \
--d '{
-      "timeSlotId": "ts-123",
-      "participantId": "instructor-456",
-      "participantType": "instructor",
-      "startTime": "2024-03-20T14:00:00Z"
-    }'</code></td>
-<td><code>
-String timeSlotId
-String participantId
-Enum participantType
-Instant startTime
-</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>akka.Done</code>
-</td>
-</tr>
-<tr>
-<td>PUT</td>
-<td>/flight/make-time-slot-unavailable<br/><br/><code>curl -X PUT \
-'http://localhost:8080/flight/make-time-slot-unavailable' \
--H 'Content-Type: application/json' \
--d '{
-      "timeSlotId": "ts-123"
-    }'</code></td>
-<td><code>
-String timeSlotId</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>akka.Done</code>
-</td>
-</tr>
-<tr>
-<td>GET</td>
-<td>/flight/time-slot<br/><br/><code>curl -X GET \
-'http://localhost:8080/flight/time-slot/ts-123'</code></td>
-<td><code>
-String timeSlotId</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: <code>TimeSlot.State</code>
-</td>
-</tr>
-<tr>
-<td>GET</td>
-<td>/flight/time-slot-view-all<br/><br/><code>curl -X GET \
-'http://localhost:8080/flight/time-slot-view-all'</code></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: TimeSlotView.TimeSlots</br>
-<code>
-  public record TimeSlots(List&lt;TimeSlotRow&gt; timeSlots) {}
-  public record TimeSlotRow(
-      String timeSlotId,
-      Instant startTime,
-      String status,
-      String participantId,
-      String participantType,
-      String reservationId) {}
-</code>
-</td>
-</tr>
-<tr>
-<td>POST</td>
-<td>/flight/time-slot-view-by-type-and-time-range<br/><br/><code>curl -X POST \
-'http://localhost:9000/flight/time-slot-view-by-type-and-time-range' \
--H 'Content-Type: application/json' \
--d '{
-      "participantType": "instructor",
-      "timeBegin": "2024-03-20T00:00:00Z",
-      "timeEnd": "2024-03-21T00:00:00Z"
-    }'</code></td>
-<td><code>
-String participantType
-Instant timeBegin
-Instant timeEnd</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: TimeSlotView.TimeSlots</br>
-<code>
-  public record TimeSlots(List&lt;TimeSlotRow&gt; timeSlots) {}
-  public record TimeSlotRow(
-      String timeSlotId,
-      Instant startTime,
-      String status,
-      String participantId,
-      String participantType,
-      String reservationId) {}
-</code>
-</td>
-</tr>
-<tr>
-<td>POST</td>
-<td>/flight/time-slot-view-by-participant-and-time-range<br/><br/><code>curl -X POST \
-'http://localhost:8080/flight/time-slot-view-by-participant-and-time-range' \
--H 'Content-Type: application/json' \
--d '{
-      "participantId": "instructor123",
-      "participantType": "INSTRUCTOR",
-      "timeBegin": "2024-03-20T00:00:00Z",
-      "timeEnd": "2024-03-21T00:00:00Z"
-    }'</code></td>
-<td><code>
-String participantId
-String participantType
-Instant timeBegin
-Instant timeEnd</code></td>
-</tr>
-<tr>
-<td></td>
-<td colspan=2>
-Response: TimeSlotView.TimeSlots</br>
-<code>
-  public record TimeSlots(List&lt;TimeSlotRow&gt; timeSlots) {}
-  public record TimeSlotRow(
-      String timeSlotId,
-      Instant startTime,
-      String status,
-      String participantId,
-      String participantType,
-      String reservationId) {}
-</code>
-</td>
-</tr>
-</table>
+The core concept in this flight scheduler is that of a `Timeslot`. A timeslot is identified by a unique identifier, but the backend makes no actual calendar demands of a timeslot. This lets the application UI decide how it will deal with timeslots such as their start and end times. 
+
+Participants will indicate their availability for a given timeslot. Once enough participants are available for a given slot, the student can then book that slot, confirming it. The following are the three types of participants that can mark availability and confirm timeslots:
+
+* Students - One of two types of end uers of the application
+* Instructor
+* Aircraft
+
+A booking requires the availability of all three participant types. An important design decision to remember is that for a given timeslot, multiple aircraft, instructors, and students can all be available. The student then must indicate which aircraft and instructor they're reserving when they make a booking.
+
+The ID of a timeslot is an opaque string and no requirements are imposed on it. An application might choose a naming convention that indicates the date and start time of a slot, e.g. `2025-08-08-09`, which would be a slot for August 8th, 2025 at 9am local time.
+
+All interactions with the training flight booking system are done through an HTTP endpoint with the following API:
+
+| Method | URL | Description |
+|:-:|---|---|
+| `POST` | `/flight/availability/{slotId}` | Adds an availability indication for a participant in a given slot | 
+| `DELETE` | `/flight/availability/{slotId}` | Removes an availability indication for a participant in a given slot |
+| `GET` | `/flight/availability/{slotId}` | Retrieves the availability status of a given slot |
+| `POST` | `/flight/bookings/{slotId}` | Book a slot. Requires availability of the three indicated participants | 
+| `DELETE` | `/flight/bookings/{slotId}/{bookingId}` | Cancels a booking for a given slot |
+| `GET` | `/flight/slots/{participantId}/{status}` | Retrieves timeslot status for the given `participantId` with a status of `status` |
+
 
 ## Flight Training Scheduler Core Functions
 
@@ -299,282 +86,163 @@ The provided template repository contains all the business logic defined in doma
 
 ### Availability Management
 
-The application allows all participants to indicate their available time slots in a calendar system. Each participant can mark when they are free for one-hour training sessions, creating a pool of available time slots for each participant type.
+The application allows all participants to indicate their available time slots in a calendar system. Each participant can mark when they are free for training sessions, creating a pool of available time slots for each participant type.
 
-### Reservation System
+### Booking System
 
-Students can browse available time slots and create reservations. The system ensures that a valid reservation can only be created when all three required participants (student, instructor, and aircraft) have marked availability for the same time slot. Reservations are always for future time slots and last precisely one hour.
+Students can browse available time slots and create bookings. The system ensures that a valid reservation can only be created when all three required participants (student, instructor, and aircraft) have marked availability for the same time slot. Bookings are always for future time slots.
 
 ## Flight Training Scheduler Business Rules
 
 ### Scheduling Logic
 
 * All reservations require exactly three participants: one each of student, instructor, and aircraft
-* Time slots start on the hour
-* Time slots are fixed at a one-hour duration
 * Participants can have multiple reservations
 * Consecutive time slots are allowed
 * No approval workflow is required
 * No qualification matching is needed between participants
 
-### Reservation Management
+### Booking Management
 
-* Reservations can only be created for future time slots
-* Existing reservations can be canceled but not modified
+* Bookings can only be created for future time slots
+* Existing bookings can be canceled but not modified
 * Cancellations can occur for any reason
 * There are no restrictions on how far in advance slots can be booked
 
 The system maintains consistency through Akka's concurrency management, ensuring double bookings cannot occur, and all participants remain correctly scheduled.
 
 ## Flight Training Scheduler Components to Implement
+The following is a list of the components that need to be implemented in order for this solution to be considered complete. Scaffolding and appropriate placeholders will be there so you can supply the implementation without worrying about ceremony.
 
-The Flight Training Scheduler application requires you to create 7 components with a single entry point (the Endpoint) and interact with one another through requests, commands, and events.
+### Booking Slot Entity
+The `BookingSlotEntity` component serves as the authority for a single instance of a time slot. A timeslot manages the list of participants that have been marked as `available` (ready to book) as well as those that have been converted to `booked` via the HTTP endpoint.
 
-![Flight Training Scheduler Component Architecture](/images/component-architecture.png)
+This entity maintains these two internal lists so that it can reject bad commands as well as commands that might violate system integrity or business rules.
 
-This component-based architecture leverages Akka SDK's capabilities to create a scalable, event-driven system that manages the complexities of flight training scheduling. Each component has a clear responsibility, promoting modularity and maintainability in the application design.
+### Participant Slot Entity
+For view purposes we want to be able to query the list of timeslots for a given participant. For example, as a student I want to see the slots that I've marked as `available` as well as those that are actively booked.
 
-### Reservation Endpoint [component](https://doc.akka.io/java/http-endpoints.html)
+Since the `BookingSlotEntity` is keyed to a single slot, we have the `ParticipantSlotEntity` which is keyed to a specific _slot-participant_ and it maintains an attribute of `status`. This entity is automatically maintained and doesn't have any endpoint interaction.
 
-* Defines the external API for the service
-* Implemented as an Akka SDK HTTP Endpoint component
-* Handles incoming HTTP requests for reservation-related operations
-* Routes requests to appropriate internal components
-* The integration point for the included scheduling GUI
+### Participant Slots View
+The `ParticipantSlotsView` is a view that allows the endpoint to query data managed by events specific to the `ParticipantSlotEntity`. Each row in this view is keyed by `slotId-participantId` and has fields for the participant type and the slot status (`booked`, `available`).
 
-### TimeSlot Entity [component](https://doc.akka.io/java/event-sourced-entities.html)
+### Slot-to-Participant Consumer
+This consumer is responsible for taking events emitted by the `BookingSlotEntity` and invoking corresponding commands on the `ParticipantSlotEntity`, effectively normalizing the data so it can be queried and filtered by attributes smaller than the timeslot ID.
 
-* Represents individual one-hour time slots for participants (students, instructors, aircraft)
-* Implemented as an Akka SDK Event sourced entity component
-* Attributes:
-  * timeSlotId: Unique identifier for the time slot
-  * participantId: ID of the associated participant
-  * participantType: Enum (student, instructor, or aircraft)
-  * startTime: Beginning of the time slot
-  * status: Enum (available, unavailable, scheduled)
-  * reservationId: Associated reservation (if scheduled)
-
-### Reservation Entity [component](https://doc.akka.io/java/event-sourced-entities.html)
-
-* Represents a flight lesson reservation
-* Implemented as an Akka SDK Event sourced entity component
-* Attributes:
-  * reservationId: Unique identifier for the reservation
-  * studentParticipant: Participant record (id, type, timeSlotId, status)
-  * instructorParticipant: Participant record
-  * aircraftParticipant: Participant record
-  * reservationTime: Time of the reservation
-  * status: Enum (pending, confirmed, cancelled)
-
-### Booking Workflow [component](https://doc.akka.io/java/workflows.html)
-
-* Defines the steps for creating a new reservation
-* Implemented as an Akka SDK Workflow component
-* Workflow steps:
-  1. Query TimeSlot view for student availability
-  2. Query TimeSlot view for available instructors
-  3. Query TimeSlot view for available aircraft
-  4. If all participants are available, create a reservation
-
-### TimeSlot View [component](https://doc.akka.io/java/views.html)
-
-* Consumes TimeSlot events and projects them into a view table
-* Implemented as an Akka SDK View component
-* Provides a query interface for accessing time slot data
-* Supports various queries to facilitate the booking workflow
-
-```sql
-SELECT * as timeSlots
-  FROM time_slot_view
- WHERE participantId = :participantId
-   AND participantType = :participantType
-   AND startTime >= :timeBegin
-   AND startTime < :timeEnd
-```
-
-```sql
-SELECT * as timeSlots
-  FROM time_slot_view
- WHERE participantType = :participantType
-   AND startTime >= :timeBegin
-   AND startTime < :timeEnd
-```
-
-### Reservation to TimeSlot Consumer [component](https://doc.akka.io/java/consuming-producing.html)
-
-* Processes reservation events, such as when a reservation is confirmed
-* Implemented as an Akka SDK Consumer component
-* Transforms reservation events into TimeSlot commands
-* Calls TimeSlot entities to update their status based on reservations
-
-### TimeSlot to Reservation Consumer [component](https://doc.akka.io/java/consuming-producing.html)
-
-* Processes TimeSlot events, such as when a student TimeSlot reservation request has been accepted
-* Implemented as an Akka SDK Consumer component
-* Transforms TimeSlot events into Reservation commands
-* Calls Reservation entities to update their status based on time slot changes
-
-## Calendar Time Slots
-
-The calendar functionality manages participant availability through coordinated components and processes.
-
-### Command Processing Flow
-
-The TimeSlot entity accepts two fundamental commands for managing availability:
-
-* MakeTimeSlotAvailable: Marks a specific time slot as available for scheduling
-* MakeTimeSlotUnavailable: Marks a specific time slot as unavailable
-
-When participants want to update their availability, they interact with the system through the reservation endpoint. This endpoint receives HTTP requests and transforms them into the appropriate TimeSlot commands. Using the componentClient, these commands are then forwarded to the specific TimeSlot entity instance.
-
-### State Management and Event Flow
-
-TimeSlot entities process these commands, updating their internal entity state and emitting corresponding events that reflect the availability changes. These events serve as the system's official record of state changes.
-
-### View Maintenance
-
-The TimeSlotView component maintains a queryable representation of all time slots and their current states. It achieves this by:
-
-* Consuming events emitted by TimeSlot entity instances
-* Processing these events to update its internal view state
-* Maintaining an up-to-date projection of time slot availability
-
-This event-driven approach ensures that the TimeSlotView always reflects the current availability status of all participants, providing accurate data for the reservation booking process.
-
-The entire flow creates a reliable and consistent system for managing calendar availability. All state changes are appropriately tracked and reflected in the queryable view.
-
-![make time slot available](images/make-time-slot-available.png)
-
-![make time slot available](images/make-time-slot-unavailable.png)
+### Flight HTTP Endpoint
+The public, RESTful API that provides consumers with access to the flight service.
 
 ## Booking Flight Training Reservations
 
-### Initial Booking Request
+To book a training flight:
 
-The reservation process begins when a student submits a booking request through the ReservationEndpoint [component](https://doc.akka.io/java/http-endpoints.html), providing their reservationId, studentId, and desired reservationTime. The endpoint forwards this request to the BookingWorkflow component using the [component client](https://doc.akka.io/java/component-and-service-calls.html#_component_client).
+* The `student` participant must be marked `available` for a given slot
+* The `aircraft` participant must be marked `available` for the same slot
+* The `instructor` participant must be marked `available` for that same slot
+* A booking request is then made of the timeslot, containing the student, aircraft, and instructor IDs.
 
-### Booking Workflow Steps
+### Cancel a Booking
+If a timeslot has a given booking then that booking can be canceled. The call to the HTTP endpoint's "create boooking" route requires the client to pass the booking ID so it will be able to use it for future calls such as `cancel`.
 
-The BookingWorkflow [component](https://doc.akka.io/java/workflows.html) executes a four-step process to validate and initiate the reservation:
+## Testing with Curl
+The easiest way to make sure your flight service is performing as designed is to use some canned `curl` statements that we know produce predictable results.
 
-1. Verify student availability by querying the TimeSlot view for the requested hour
-2. Search for available instructor time slots during the requested hour
-3. Locate available aircraft time slots during the requested hour
-4. If all prerequisites are met, send a CreateReservation command to the ReservationEntity
+Start by marking availability in the slot `bestslot` for 3 participants: `alice`, `superplane`, and `superteacher` for the `student`, `aircraft`, and `instructor` respectively.
 
-The workflow terminates early if any of the first three steps fail to find available participants.
+```
+curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "alice", "participantType": "student"}' localhost:9000/flight/availability/bestslot
 
-### Reservation Creation
+curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "superplane", "participantType": "aircraft"}' localhost:9000/flight/availability/bestslot
 
-Upon receiving the create command, the ReservationEntity [component](https://doc.akka.io/java/event-sourced-entities.html):
+curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "superteacher", "participantType": "instructor"}' localhost:9000/flight/availability/bestslot
+```
 
-* Creates a new reservation in pending status
-* It emits four distinct events:
-  * ReservationCreated
-  * StudentWantsTimeSlot
-  * InstructorWantsTimeSlot
-  * AircraftWantsTimeSlot
+Query the slot's internal state:
+```
+curl -H "Content-Type: application/json" localhost:9000/flight/availability/bestslot
+```
 
-### Time Slot Request Processing
+```json
+{
+  "bookings": [],
+  "available": [
+    {
+      "id": "alice",
+      "participantType": "STUDENT"
+    },
+    {
+      "id": "superteacher",
+      "participantType": "INSTRUCTOR"
+    },
+    {
+      "id": "superplane",
+      "participantType": "AIRCRAFT"
+    }
+  ]
+}
+```
 
-The ReservationToTimeSlotConsumer [component](https://doc.akka.io/java/consuming-producing.html) processes the three "wants time slot" events by:
+Now you can query for all of Alice's availability slots:
+```
+curl -v localhost:9000/flight/slots/alice/available
+```
 
-* Converting each event into a command to reserve the specific time slot
-* Sending these commands to the appropriate TimeSlotEntity
-* The TimeSlotEntity either accepts the request (changing status to scheduled) or rejects it
-* Emits either a request accepted or request rejected event
+And the `superplane`:
+```
+curl -v localhost:9000/flight/slots/superplane/available
+```
 
-### Reservation Confirmation Flow
+Now book the slot:
+```
+curl -v -H "Content-Type: application/json" localhost:9000/flight/bookings/bestslot -d '{"bookingId": "booking4", "aircraftId": "superplane", "instructorId": "superteacher", "studentId": "alice"}'
+```
 
-The TimeSlotToReservationConsumer [component](https://doc.akka.io/java/consuming-producing.html):
+Check alice's booked timeslots:
+```
+curl -v localhost:9000/flight/slots/alice/booked
+```
 
-* Processes the accepted/rejected events from time slots
-* Converts these events into acceptance or rejection commands
-* Forwards these commands to the reservation entity
+The JSON output:
+```json
+{
+  "slots": [
+    {
+      "slotId": "bestslot",
+      "participantId": "alice",
+      "participantType": "STUDENT",
+      "bookingId": "booking4",
+      "status": "booked"
+    }
+  ]
+}
+```
+Note that there's enough information in the output of this timeslot query to cancel a booking. We got both the `slotId` and the `bookingId`.
 
-### Final Reservation Status
+Cancel the booking, which should result in all 3 participants having a canceled event:
 
-The ReservationEntity determines the final reservation status based on the responses:
+```
+curl -v -X DELETE -H "Content-Type: application/json" localhost:9000/flight/bookings/bestslot/booking4 
+```
 
-* Changes status to confirmed if all three of the time slot requests were accepted
-* Changes status to canceled if any time slot request was rejected
+You'll see something like this in the service's log:
 
-This orchestrated flow ensures that reservations are only confirmed when all three participants have successfully secured their time slots, maintaining consistency across the system.
+```
 
-### Cancel a Reservation
+12:49:38.595 INFO  i.e.a.SlotToParticipantConsumer - Canceling booking booking4 for participant superteacher
+12:49:38.609 INFO  i.e.a.SlotToParticipantConsumer - Canceling booking booking4 for participant superplane
+12:49:38.614 INFO  i.e.a.SlotToParticipantConsumer - Canceling booking booking4 for participant alice
+```
 
-When a reservation is canceled due to one or more unavailable participants, the reservation entity emits three cancel reservation events, one for each participant. These events are processed by the ReservationToTimeSlotConsumer, which then sends commands to cancel the time slot reservation. Existing time slots will change their status to available when they receive a cancellation command.
+The timeslot entity should now be empty (no availability, no bookings):
+```
+curl -H "Content-Type: application/json" localhost:9000/flight/availability/bestslot
+```
 
-### Process flow diagrams
+```json
 
-Process the HTTP request to start a reservation booking workflow.
-
-![booking workflow 1](images/booking-workflow-1-0.png)
-
-![booking workflow 2](images/booking-workflow-2-0.png)
-
-![booking workflow 3](images/booking-workflow-3-0.png)
-
-![booking workflow 4](images/booking-workflow-4-0.png)
-
-![booking workflow 5](images/booking-workflow-5-0.png)
-
-![booking workflow 6](images/booking-workflow-6-0.png)
-
-![booking workflow 7](images/booking-workflow-7-0.png)
-
-![booking workflow 8](images/booking-workflow-8-0.png)
-
-Process the four workflow steps. First, query the time slot view to check the availability of the student, an instructor, and an aircraft. If all are available, send a command to create a reservation and [terminate the workflow](https://doc.akka.io/java/workflows.html#_workflow_definition).
-
-The reservation is created with a pending status. It also emits events that trigger reservation requests for all three participant time slots.
-
-The event consumer sends commands to the participant's time slot to request a time slot reservation.
-
-The participant’s time slot either entity accepts or rejects the reservation based on its current availability status. These events may trigger view updates. The TimeSlotToReservationConsumer will then process these events.
-
-The consumer processes the time slot accept or reject events and forwards them to the ReservationEntity. If all three participants are available, the reservation status is set to confirmed, and the reservation processing flow is complete. If one or more time slots are unavailable, the reservation is canceled.
-
-When a reservation is canceled, the entity emits events, one for each participant. These events trigger sending commands to the time slots of the participants. The time slot reservations have been cleared, and the status is available.
-
-![reservation to time slot consumer 3](images/cancel-reservation.png)
-
-## Certification Testing UI
-
-To assist developers in verifying the functionality of their implementation, we provide a web-based front-end application. This UI allows for comprehensive testing of the Flight Training Scheduler's core features.
-
-### Features of the Testing UI
-
-* Availability Management: Interface for setting availability of students, instructors, and aircraft
-* Reservation Booking: UI for students to schedule flight training session reservations
-* Real-time Updates: Displays current availability and reservation statuses
-
-### Accessing the UI
-
-The UI application is available at: [akka-dev-cert-ui](https://github.com/akka/akka-dev-cert-ui)
-
-### Setup Instructions
-
-1. Clone the UI application repository
-2. Follow the README instructions provided in the UI repository for setup and configuration
-
-### Using the UI for Testing
-
-* Use the availability management interface to set up various scheduling scenarios
-* Test the reservation system by attempting to book sessions with different combinations of participants and time slots
-* Verify that the system correctly handles availability conflicts, successful bookings, and cancellations
-
-### Integration with Your Implementation
-
-* Ensure your Akka SDK implementation correctly interfaces with the UI
-* Verify that all actions performed in the UI are accurately reflected in your backend system
-
-### Troubleshooting
-
-* If you encounter any issues with the UI or its integration with your implementation, refer to the troubleshooting section in the UI repository's README
-
-Using this Testing UI in conjunction with the provided test suite will give you a comprehensive view of your implementation's functionality, helping ensure that your solution meets all certification requirements.
-
-## Caveat Emptor
-
-This repository and its code are provided as-is and are not covered by Akka security policies. There are no guarantees of security, stability, or support. Use at your own risk.
+{
+  "bookings": [],
+  "available": []
+}
+```

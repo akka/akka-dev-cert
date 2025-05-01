@@ -4,19 +4,44 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.0.2</version>
+    <version>3.3.0</version>
   </parent>
-
+  
   <groupId>io.example</groupId>
   <artifactId>akka-dev-cert</artifactId>
   <version>v.0.0.1</version>
   <packaging>jar</packaging>
 
-  <name>akka-dev-cert</name>
+  <name>akka-dev-cert-solution</name>
   <properties>
 
   </properties>
+  
+  <build>
 
+    <plugins>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.44.4</version>
+        <configuration>
+          <java>
+            <googleJavaFormat>
+              <version>1.26.0</version>
+              <style>GOOGLE</style>
+            </googleJavaFormat>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>apply</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    </build>
   <dependencies>
     <!-- Your dependencies go here -->
   </dependencies>
