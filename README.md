@@ -1,4 +1,4 @@
-# How to Get Certified
+# How to Get Certified 
 
 The Flight Training Scheduler project serves as the certification test for Akka developers. This certification process evaluates your ability to implement a real-world application using Akka SDK components given a set of requirements, scaffolding, and some starter classes.
 
