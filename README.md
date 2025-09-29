@@ -10,7 +10,15 @@ The Flight Training Scheduler project serves as the certification test for Akka 
 * Apache Maven version 3.9 or later
 * `curl` command-line tool
 
-Clone this template repository, which contains:
+Download the Akka CLI following the instructions [here](https://doc.akka.io/operations/cli/installation.html), and create any example project by running
+
+```shell
+akka code init
+```
+
+This will add your `repo.akka.io` token to your local user account's [Maven `settings.xml` file](https://maven.apache.org/settings.html).
+
+Then, clone this template repository, which contains:
 
 * Project structure and configuration
 * Documentation and requirements
