@@ -39,6 +39,9 @@ public class FlightEndpoint extends AbstractHttpEndpoint {
 
         // Implementation here
 
+        // Make sure to get a flight conditions report from the AI agent and use that
+        // to decide if the booking can be created
+
         return HttpResponses.created();
     }
 

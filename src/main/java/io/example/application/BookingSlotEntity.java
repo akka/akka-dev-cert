@@ -1,18 +1,17 @@
 package io.example.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import io.example.domain.BookingEvent;
 import io.example.domain.Participant;
 import io.example.domain.Timeslot;
 import java.util.HashSet;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("booking-slot")
+@Component(id = "booking-slot")
 public class BookingSlotEntity extends EventSourcedEntity<Timeslot, BookingEvent> {
 
     private final String entityId;

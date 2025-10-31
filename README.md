@@ -9,6 +9,7 @@ The Flight Training Scheduler project serves as the certification test for Akka 
 * Java 21, Eclipse Adoptium recommend
 * Apache Maven version 3.9 or later
 * `curl` command-line tool
+* An API key and whatever configuration is necessary to communicate with an LLM model provider (e.g. OpenAI). Use one of our [supported models](https://doc.akka.io/java/agents.html#model). Nothing in this application should exceed free/trial limits.
 
 Download the Akka CLI following the instructions [here](https://doc.akka.io/operations/cli/installation.html), and create any example project by running
 
@@ -21,30 +22,31 @@ This will add your `repo.akka.io` token to your local user account's [Maven `set
 Then, clone this template repository, which contains:
 
 * Project structure and configuration
+* Supporting scaffolds
 * Documentation and requirements
-* Test suite
 * All non-Akka components
 
 ### Certification Requirements
 
 Your task is to implement the following Akka SDK components:
 
-* Flights [endpoint](https://doc.akka.io/java/http-endpoints.html)
-* BookingSlot [entity](https://doc.akka.io/java/event-sourced-entities.html)
-* ParticipantSlots [view](https://doc.akka.io/java/views.html)
+* **Flights** [endpoint](https://doc.akka.io/java/http-endpoints.html)
+* **BookingSlot** [entity](https://doc.akka.io/java/event-sourced-entities.html)
+* **ParticipantSlots** [view](https://doc.akka.io/java/views.html)
+* **FlightConditions** [agent](https://doc.akka.io/java/agents.html)
 
 ### Implementation Guidelines
 
 * Adhere to the design specifications for each component
 * Ensure all components work together as described
-* Pass all provided test cases
+* Code must pass all tests if you provide them
 * Maintain proper event flow and state management
 * Handle all required operations correctly
 
 ### Submission Process
 
 1. Complete your implementation
-2. Test thoroughly using the provided test suite
+2. Test thoroughly as judges will be using a script to test edge cases
 3. Upload your completed project to a public repository (e.g., GitHub)
 4. Email [certification@akka.io](mailto:certification@akka.io) with:
    * Your contact information
@@ -58,7 +60,7 @@ The certification team will review your implementation for:
 * Proper use of Akka SDK components
 * Code quality and organization
 * Adherence to specified requirements
-* Successful test completion
+* Successful completion of the judge's test script
 
 ## Flight Training Scheduler App Design
 
@@ -68,13 +70,13 @@ The core concept in this flight scheduler is that of a `Timeslot`. A timeslot is
 
 Participants will indicate their availability for a given timeslot. Once enough participants are available for a given slot, the student can then book that slot, confirming it. The following are the three types of participants that can mark availability and confirm timeslots:
 
-* Students - One of two types of end uers of the application
+* Students - One of two types of end users of the application
 * Instructor
 * Aircraft
 
 A booking requires the availability of all three participant types. An important design decision to remember is that for a given timeslot, multiple aircraft, instructors, and students can all be available. The student then must indicate which aircraft and instructor they're reserving when they make a booking.
 
-The ID of a timeslot is an opaque string and no requirements are imposed on it. An application might choose a naming convention that indicates the date and start time of a slot, e.g. `2025-08-08-09`, which would be a slot for August 8th, 2025 at 9am local time.
+The ID of a timeslot **must** be a string representing a simplified date and time that takes the format `YYYY-MM-DD-HH`, where `HH` is the hour of day in 24-hour time. For example, the time slot ID of `2025-08-08-09`, represents a slot for August 8th, 2025 at 9am local time.
 
 All interactions with the training flight booking system are done through an HTTP endpoint with the following API:
 
@@ -98,7 +100,7 @@ The application allows all participants to indicate their available time slots i
 
 ### Booking System
 
-Students can browse available time slots and create bookings. The system ensures that a valid reservation can only be created when all three required participants (student, instructor, and aircraft) have marked availability for the same time slot. Bookings are always for future time slots.
+Students can browse available time slots and create bookings. The system ensures that a valid reservation can only be created when all three required participants (student, instructor, and aircraft) have marked availability for the same time slot. Bookings are always for future time slots. The system also uses an agent to verify that flight conditions for the slot meet minimum requirements.
 
 ## Flight Training Scheduler Business Rules
 
@@ -116,6 +118,7 @@ Students can browse available time slots and create bookings. The system ensures
 * Existing bookings can be canceled but not modified
 * Cancellations can occur for any reason
 * There are no restrictions on how far in advance slots can be booked
+* The flight conditions agent must verify that conditions at the time of booking will meet requirements.
 
 The system maintains consistency through Akka's concurrency management, ensuring double bookings cannot occur, and all participants remain correctly scheduled.
 
@@ -126,6 +129,9 @@ The following is a list of the components that need to be implemented in order f
 The `BookingSlotEntity` component serves as the authority for a single instance of a time slot. A timeslot manages the list of participants that have been marked as `available` (ready to book) as well as those that have been converted to `booked` via the HTTP endpoint.
 
 This entity maintains these two internal lists so that it can reject bad commands as well as commands that might violate system integrity or business rules.
+
+### Flight Conditions Agent
+Before a booking can be confirmed, the flight conditions must be checked. You will create a generative AI agent that communicates with an LLM to verify that flight conditions meet criteria. If the booking slot is too far in the future to predict conditions, then the agent will conditionally approve. For more details, see the comments in the agent placeholder.
 
 ### Participant Slot Entity
 For view purposes we want to be able to query the list of timeslots for a given participant. For example, as a student I want to see the slots that I've marked as `available` as well as those that are actively booked.
@@ -149,6 +155,7 @@ To book a training flight:
 * The `aircraft` participant must be marked `available` for the same slot
 * The `instructor` participant must be marked `available` for that same slot
 * A booking request is then made of the timeslot, containing the student, aircraft, and instructor IDs.
+* For the proposed time slot, the flight conditions agent _must_ approve predicted conditions.
 
 ### Cancel a Booking
 If a timeslot has a given booking then that booking can be canceled. The call to the HTTP endpoint's "create boooking" route requires the client to pass the booking ID so it will be able to use it for future calls such as `cancel`.
@@ -156,14 +163,16 @@ If a timeslot has a given booking then that booking can be canceled. The call to
 ## Testing with Curl
 The easiest way to make sure your flight service is performing as designed is to use some canned `curl` statements that we know produce predictable results.
 
+Pick an appropriate timeslot to use. For the examples below, `2025-12-10-10` is used. If you are using these commands after that date, pick a new one in the future. 
+
 Start by marking availability in the slot `bestslot` for 3 participants: `alice`, `superplane`, and `superteacher` for the `student`, `aircraft`, and `instructor` respectively.
 
 ```
-curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "alice", "participantType": "student"}' localhost:9000/flight/availability/bestslot
+curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "alice", "participantType": "student"}' localhost:9000/flight/availability/2025-12-10-10
 
-curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "superplane", "participantType": "aircraft"}' localhost:9000/flight/availability/bestslot
+curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "superplane", "participantType": "aircraft"}' localhost:9000/flight/availability/2025-12-10-10
 
-curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "superteacher", "participantType": "instructor"}' localhost:9000/flight/availability/bestslot
+curl -v -H "Content-Type: application/json" -X POST -d '{"participantId": "superteacher", "participantType": "instructor"}' localhost:9000/flight/availability/2025-12-10-10
 ```
 
 Query the slot's internal state:
@@ -203,7 +212,7 @@ curl -v localhost:9000/flight/slots/superplane/available
 
 Now book the slot:
 ```
-curl -v -H "Content-Type: application/json" localhost:9000/flight/bookings/bestslot -d '{"bookingId": "booking4", "aircraftId": "superplane", "instructorId": "superteacher", "studentId": "alice"}'
+curl -v -H "Content-Type: application/json" localhost:9000/flight/bookings/2025-12-10-10 -d '{"bookingId": "booking4", "aircraftId": "superplane", "instructorId": "superteacher", "studentId": "alice"}'
 ```
 
 Check alice's booked timeslots:
@@ -216,7 +225,7 @@ The JSON output:
 {
   "slots": [
     {
-      "slotId": "bestslot",
+      "slotId": "2025-12-10-10",
       "participantId": "alice",
       "participantType": "STUDENT",
       "bookingId": "booking4",
@@ -230,7 +239,7 @@ Note that there's enough information in the output of this timeslot query to can
 Cancel the booking, which should result in all 3 participants having a canceled event:
 
 ```
-curl -v -X DELETE -H "Content-Type: application/json" localhost:9000/flight/bookings/bestslot/booking4 
+curl -v -X DELETE -H "Content-Type: application/json" localhost:9000/flight/bookings/2025-12-10-10/booking4 
 ```
 
 You'll see something like this in the service's log:
@@ -242,9 +251,9 @@ You'll see something like this in the service's log:
 12:49:38.614 INFO  i.e.a.SlotToParticipantConsumer - Canceling booking booking4 for participant alice
 ```
 
-The `Timeslot` which is the internal state of the Booking Slot Entity; should now be empty (no availability, no bookings):
+The `Timeslot`, which is the internal state of the Booking Slot Entity, should now be empty (no availability, no bookings):
 ```
-curl -H "Content-Type: application/json" localhost:9000/flight/availability/bestslot
+curl -H "Content-Type: application/json" localhost:9000/flight/availability/2025-12-10-10
 ```
 
 ```json

@@ -1,6 +1,6 @@
 package io.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 // This class is responsible for consuming events from the booking
 // slot entity and turning those into command calls on the
 // participant slot entity
-@ComponentId("booking-slot-consumer")
+@Component(id = "booking-slot-consumer")
 @Consume.FromEventSourcedEntity(BookingSlotEntity.class)
 public class SlotToParticipantConsumer extends Consumer {
 
